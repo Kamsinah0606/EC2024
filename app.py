@@ -50,7 +50,6 @@ if df_onlines is not None:
 
         st.subheader("Descriptive Statistics (`df.describe()`)")
         st.dataframe(df_onlines.describe())
-
 import pandas as pd
 import matplotlib.pyplot as plt
 
