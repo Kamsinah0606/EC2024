@@ -11,7 +11,7 @@ st.header("Scientific Visualization", divider="gray")
 
 # Set the page configuration
 st.set_page_config(layout="centered")
-st.title("Faculty Gender Distribution Dashboard 📊")
+st.title("Faculty Gender Distribution Dashboard")
 st.markdown("This app visualizes the gender distribution from `arts_faculty_data.csv` using **Plotly**.")
 
 
