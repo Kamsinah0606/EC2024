@@ -3,10 +3,10 @@ import pandas as pd
 import plotly.express as px
 
 st.set_page_config(
-    page_title="Genetic Algorithm"
+    page_title="Scientific Visualization"
 )
 
-st.header("Genetic Algorithm", divider="gray")
+st.header("Scientific Visualization", divider="gray")
 
 
 # Set the page configuration
