@@ -50,3 +50,23 @@ if df_onlines is not None:
 
         st.subheader("Descriptive Statistics (`df.describe()`)")
         st.dataframe(df_onlines.describe())
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# The user's original code used 'df', corrected to 'df_onlines' (or 'df' in the user's local context)
+# For the execution, we use the loaded or dummy DataFrame 'df_onlines'
+gender_counts = df_onlines['Gender'].value_counts()
+
+plt.figure(figsize=(7, 7))
+plt.pie(
+    gender_counts,
+    labels=gender_counts.index,
+    autopct='%1.1f%%',
+    startangle=140,
+    colors=['#ff9999','#66b3ff', '#99ff99'] # Added custom colors
+)
+plt.title('Distribution of Faculty Staff by Gender', fontsize=14)
+plt.ylabel('')
+plt.axis('equal') # Equal aspect ratio ensures that pie is drawn as a circle.
+plt.show()
