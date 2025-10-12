@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
+import plotly.express as px
 
 st.set_page_config(
     page_title="Scientific Visualization"
@@ -8,8 +8,6 @@ st.set_page_config(
 
 st.header("Genetic Algorithm", divider="gray")
 
-import streamlit as st
-import pandas as pd
 
 # Set the title of the Streamlit application
 st.title("Faculty Data Loader and Viewer")
@@ -22,56 +20,59 @@ st.set_page_config(layout="wide") # Use wide layout for better visualization
 st.title("Faculty Data Analysis Dashboard 📊")
 st.markdown("This application loads and visualizes the 'arts_faculty_data.csv' file from GitHub.")
 
-# --- Data Loading Function (Optimized with Caching) ---
+
+# --- Configuration ---
+st.set_page_config(layout="centered")
+st.title("Faculty Gender Distribution (Plotly)")
+st.markdown("Interactive visualization of the 'arts_faculty_data.csv' using Plotly.")
+
+# --- Data Loading (Using st.cache_data for efficiency) ---
 url = "https://raw.githubusercontent.com/Kamsinah0606/EC2024/refs/heads/main/arts_faculty_data.csv"
 
 @st.cache_data
 def load_data(data_url):
-    """Loads the CSV data efficiently."""
+    """Loads the CSV data into a pandas DataFrame."""
     try:
         df = pd.read_csv(data_url)
         return df
     except Exception as e:
-        st.error(f"Error loading data: {e}")
+        st.error(f"Error loading data from URL: {e}")
         return None
 
-# Load the DataFrame
 df_onlines = load_data(url)
 
-# --- Visualization Section ---
+# --- Plotly Visualization ---
 if df_onlines is not None:
-    st.subheader("Data Overview")
-    st.write(f"DataFrame loaded successfully with **{df_onlines.shape[0]} rows** and **{df_onlines.shape[1]} columns**.")
+    # 1. Calculate the gender counts
+    # Unlike Matplotlib, Plotly Express needs two columns for the pie chart: 
+    # the category (names) and the value (counts).
+    gender_counts_df = df_onlines['Gender'].value_counts().reset_index()
+    gender_counts_df.columns = ['Gender', 'Count']
 
-    # You can choose to display the data in an expander for cleanliness
-    with st.expander("View Raw Data"):
-        st.dataframe(df_onlines)
+    # 2. Create the Plotly figure using Plotly Express
+    fig = px.pie(
+        gender_counts_df,
+        values='Count',
+        names='Gender',
+        title='Distribution of Faculty Staff by Gender',
+        # Customizing the hover info and text
+        hole=0.3, # Optional: makes it a donut chart
+        color_discrete_sequence=px.colors.qualitative.Pastel # Use a nice color scheme
+    )
 
-    # Use a container or column for better layout
-    st.markdown("---")
-    st.subheader("Gender Distribution Analysis")
+    # Optional: Customize the layout for better presentation
+    fig.update_traces(
+        textposition='inside',
+        textinfo='percent+label',
+        marker=dict(line=dict(color='#000000', width=1))
+    )
 
-    # Check if the 'Gender' column exists before trying to plot
-    if 'Gender' in df_onlines.columns:
-        # Calculate the counts
-        gender_counts = df_onlines['Gender'].value_counts()
+    # 3. Display the Plotly figure in Streamlit
+    st.plotly_chart(fig, use_container_width=True)
 
-        # Create the matplotlib figure
-        fig, ax = plt.subplots(figsize=(6, 6)) # Use fig, ax convention for best practice
-        ax.pie(
-            gender_counts,
-            labels=gender_counts.index,
-            autopct='%1.1f%%',
-            startangle=140,
-            colors=['#ff9999', '#66b3ff', '#99ff99'] # Added custom colors
-        )
-        ax.set_title('Distribution of Faculty Staff by Gender')
-        ax.axis('equal') # Equal aspect ratio ensures that pie is drawn as a circle.
+    # Optional: Show the underlying data
+    if st.checkbox('Show Gender Count Data'):
+        st.dataframe(gender_counts_df)
 
-        # Display the plot in Streamlit
-        st.pyplot(fig)
-
-    else:
-        st.warning("The DataFrame does not contain a 'Gender' column to plot distribution.")
-
-# --- End of App ---
+else:
+    st.warning("Could not display chart because data failed to load.")
