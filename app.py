@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 
 st.set_page_config(
-    page_title="Scientific Visualization"
+    page_title="Genetic Algorithm"
 )
 
 st.header("Genetic Algorithm", divider="gray")
