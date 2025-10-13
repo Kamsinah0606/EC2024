@@ -10,7 +10,6 @@ st.header("Scientific Visualization", divider="gray")
 
 def app():
     # Set the title of the app
-    st.title('CSV File Uploader and Viewer')
     st.markdown("""
     Upload your CSV file below to display the first few rows 
     and see the dataframe's shape.
