@@ -8,6 +8,50 @@ st.set_page_config(
 
 st.header("Scientific Visualization", divider="gray")
 
+def app():
+    # Set the title of the app
+    st.title('CSV File Uploader and Viewer')
+    st.markdown("""
+    Upload your CSV file below to display the first few rows 
+    and see the dataframe's shape.
+    """)
+
+    # 1. Use st.file_uploader to let the user upload a file
+    uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
+
+    if uploaded_file is not None:
+        try:
+            # 2. Read the uploaded file into a pandas DataFrame
+            # st.cache_data is used to cache the result of the function call
+            # so data isn't reloaded every time the script reruns.
+            @st.cache_data
+            def load_data(file):
+                # We use io.BytesIO or just the file object, pandas handles the rest
+                # using the file-like object provided by Streamlit
+                return pd.read_csv(file, encoding='latin-1')
+
+            df = load_data(uploaded_file)
+
+            st.success('File loaded successfully! 🎉')
+
+            # 3. Display the head of the DataFrame (equivalent of display(df.head()))
+            st.header('First 5 Rows of the Data')
+            st.dataframe(df.head())
+
+            # 4. Display the shape of the DataFrame (equivalent of print(df.shape))
+            st.header('DataFrame Shape')
+            # st.write is flexible and can display various data types
+            st.write(f'The DataFrame has **{df.shape[0]}** rows and **{df.shape[1]}** columns.')
+            st.code(df.shape)
+
+        except Exception as e:
+            # 5. Display the error message in Streamlit
+            st.error(f'Error loading data: {e}')
+            st.warning('Please check the file format and the specified encoding (`latin-1`).')
+
+if __name__ == '__main__':
+    app()
+
 
 # Set the page configuration
 st.set_page_config(layout="centered")
