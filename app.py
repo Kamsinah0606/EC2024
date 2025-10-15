@@ -5,10 +5,10 @@ import plotly.graph_objects as go
 import numpy as np
 
 st.set_page_config(
-    page_title="Genetic Algorithm"
+    page_title="Scientific Visualization"
 )
 
-st.header("Genetic Algorithm", divider="gray")
+st.header("Scientific Visualization", divider="gray")
 
 # Define the URL for the data
 URL = 'https://raw.githubusercontent.com/Kamsinah0606/EC2024/refs/heads/main/arts_faculty_data.csv'
