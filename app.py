@@ -75,7 +75,7 @@ arts_df, semester_gpa_cols = load_data(FILE_PATH)
 if arts_df.empty:
     st.stop()
 
-st.title("📊 Arts Faculty Data Visualizations (5 Key Insights)")
+st.title("Arts Faculty Data Visualizations")
 st.markdown("---")
 
 
@@ -88,7 +88,7 @@ try:
         x='Average_Semester_GPA', 
         nbins=20, 
         title='Distribution of Average Semester GPA',
-        color_discrete_sequence=['#4CAF50']
+        color_discrete_sequence=['pink']
     )
     fig_hist.update_layout(xaxis_title="Average Semester GPA", yaxis_title="Number of Students")
     st.plotly_chart(fig_hist, use_container_width=True)
