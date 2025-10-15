@@ -1,109 +1,177 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
+import numpy as np
 
-st.set_page_config(
-    page_title="Scientific Visualization"
-)
+# Set Streamlit page configuration
+st.set_page_config(layout="wide", title="Arts Faculty Data Analysis")
 
-st.header("Scientific Visualization", divider="gray")
-
-def app():
-    # Set the title of the app
-    st.markdown("""
-    Upload your CSV file below to display the first few rows 
-    and see the dataframe's shape.
-    """)
-
-    # 1. Use st.file_uploader to let the user upload a file
-    uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
-
-    if uploaded_file is not None:
-        try:
-            # 2. Read the uploaded file into a pandas DataFrame
-            # st.cache_data is used to cache the result of the function call
-            # so data isn't reloaded every time the script reruns.
-            @st.cache_data
-            def load_data(file):
-                # We use io.BytesIO or just the file object, pandas handles the rest
-                # using the file-like object provided by Streamlit
-                return pd.read_csv(file, encoding='latin-1')
-
-            df = load_data(uploaded_file)
-
-            st.success('File loaded successfully! 🎉')
-
-            # 3. Display the head of the DataFrame (equivalent of display(df.head()))
-            st.header('First 5 Rows of the Data')
-            st.dataframe(df.head())
-
-            # 4. Display the shape of the DataFrame (equivalent of print(df.shape))
-            st.header('DataFrame Shape')
-            # st.write is flexible and can display various data types
-            st.write(f'The DataFrame has **{df.shape[0]}** rows and **{df.shape[1]}** columns.')
-            st.code(df.shape)
-
-        except Exception as e:
-            # 5. Display the error message in Streamlit
-            st.error(f'Error loading data: {e}')
-            st.warning('Please check the file format and the specified encoding (`latin-1`).')
-
-if __name__ == '__main__':
-    app()
-
-
-# Set the page configuration
-st.set_page_config(layout="centered")
-st.title("Faculty Gender Distribution Dashboard")
-st.markdown("This app visualizes the gender distribution from `arts_faculty_data.csv` using **Plotly**.")
-
-
-# URL for the dataset
-url = "https://raw.githubusercontent.com/Kamsinah0606/EC2024/refs/heads/main/arts_faculty_data.csv"
-
-# Set the title for the Streamlit app
-st.title('Gender Distribution Analysis')
-
+# --- Data Loading and Preprocessing ---
 @st.cache_data
-def load_data(data_url):
-    """Loads data from the URL and caches it."""
+def load_data(file_path):
+    """Loads and preprocesses the Arts Faculty data."""
     try:
-        df = pd.read_csv(data_url)
-        return df
-    except Exception as e:
-        st.error(f"Error loading data: {e}")
-        return pd.DataFrame() # Return an empty DataFrame on error
+        df = pd.read_csv(file_path)
+    except FileNotFoundError:
+        st.error(f"Error: The file '{file_path}' was not found.")
+        return pd.DataFrame()
 
-# Load the data
-df = load_data(url)
+    # Filter for 'Arts' Faculty
+    arts_df = df[df['Faculty'] == 'Arts'].copy()
 
-# Check if the DataFrame is loaded and 'Gender' column exists
-if not df.empty and 'Gender' in df.columns:
-    # 1. Calculate the counts for each gender
-    gender_counts = df['Gender'].value_counts().reset_index()
-    gender_counts.columns = ['Gender', 'Count']
+    # List of GPA columns to convert to numeric
+    gpa_cols = [
+        'S.S.C (GPA)', 
+        'H.S.C (GPA)', 
+        '1st Year Semester 1', 
+        '1st Year Semester 2', 
+        '2nd Year Semester 1', 
+        '2nd Year Semester 2', 
+        '3rd Year Semester 1', 
+        '3rd Year Semester 2'
+    ]
 
-    # 2. Create the Plotly Pie Chart
-    # Plotly Express is generally preferred for simple Plotly figures
-    fig = px.pie(
-        gender_counts,
-        names='Gender',         # Column for labels
-        values='Count',         # Column for values
-        title='Distribution of Gender',
-        hole=0.3,               # Optional: Creates a donut chart
-        color_discrete_sequence=px.colors.qualitative.Pastel # Optional: Set colors
+    for col in gpa_cols:
+        # Coerce to numeric, setting non-convertible values to NaN
+        arts_df.loc[:, col] = pd.to_numeric(arts_df[col], errors='coerce')
+
+    # Calculate the average GPA across all recorded semesters
+    semester_gpa_cols = [col for col in gpa_cols if 'Semester' in col]
+    arts_df['Average_Semester_GPA'] = arts_df[semester_gpa_cols].mean(axis=1)
+
+    # Drop rows with missing values in key columns for analysis
+    arts_df.dropna(subset=['H.S.C or Equivalent study medium', 'Average_Semester_GPA'], inplace=True)
+
+    # Clean up 'H.S.C or Equivalent study medium'
+    arts_df['Study_Medium'] = arts_df['H.S.C or Equivalent study medium'].replace({
+        'Bangla Medium': 'Bangla', 
+        'English Medium': 'English'
+    })
+
+    # Prepare 'Coaching Center' variable
+    arts_df['Attended_Coaching'] = arts_df['Did you ever attend a Coaching center?'].fillna('No').replace({
+        'No': 'No', 
+        'Yes': 'Yes'
+    })
+    
+    # Prepare 'Conducive_Learning_Env_Rating'
+    arts_df.rename(columns={'Area of Evaluation [Department ensures a conducive learning environment]': 'Conducive_Learning_Env_Rating'}, inplace=True)
+    arts_df.dropna(subset=['Conducive_Learning_Env_Rating'], inplace=True)
+    arts_df['Conducive_Learning_Env_Rating'] = arts_df['Conducive_Learning_Env_Rating'].astype(int).astype(str)
+
+    return arts_df, semester_gpa_cols
+
+# Define the file path (assuming the file is in the same directory)
+FILE_PATH = 'arts_faculty_data.csv'
+arts_df, semester_gpa_cols = load_data(FILE_PATH)
+
+if arts_df.empty:
+    st.stop()
+
+st.title("📊 Arts Faculty Data Visualizations (5 Key Insights)")
+st.markdown("---")
+
+
+# --- 1. Distribution of Average Semester GPA (Histogram) ---
+st.header("1. Distribution of Average Semester GPA")
+st.write("This histogram shows the distribution of the average GPA across all recorded semesters for Arts Faculty students.")
+try:
+    fig_hist = px.histogram(
+        arts_df, 
+        x='Average_Semester_GPA', 
+        nbins=20, 
+        title='Distribution of Average Semester GPA',
+        color_discrete_sequence=['#4CAF50']
     )
+    fig_hist.update_layout(xaxis_title="Average Semester GPA", yaxis_title="Number of Students")
+    st.plotly_chart(fig_hist, use_container_width=True)
+except Exception as e:
+    st.error(f"Error generating Histogram: {e}")
 
-    # 3. Customize the layout (optional but good practice)
-    fig.update_traces(textposition='inside', textinfo='percent+label')
-    fig.update_layout(uniformtext_minsize=12, uniformtext_mode='hide')
+st.markdown("---")
 
-    # 4. Display the chart in Streamlit
-    st.plotly_chart(fig, use_container_width=True)
+# --- 2. Average GPA by Study Medium (Box Plot) ---
+st.header("2. Average GPA Distribution by Prior Study Medium")
+st.write("A box plot comparing the spread of average semester GPA for students based on their H.S.C. or equivalent study medium (Bangla vs. English).")
+try:
+    fig_box = px.box(
+        arts_df, 
+        x='Study_Medium', 
+        y='Average_Semester_GPA', 
+        color='Study_Medium',
+        title='Average Semester GPA Distribution by Study Medium',
+        color_discrete_map={'Bangla': 'skyblue', 'English': 'coral'}
+    )
+    fig_box.update_layout(xaxis_title="Study Medium", yaxis_title="Average Semester GPA")
+    st.plotly_chart(fig_box, use_container_width=True)
+except Exception as e:
+    st.error(f"Error generating Box Plot: {e}")
 
-    # Optional: Display the raw counts
-    st.subheader('Raw Gender Counts')
-    st.dataframe(gender_counts, use_container_width=True)
+st.markdown("---")
 
-else:
-    st.warning("Data could not be loaded or the 'Gender' column is missing.")
+# --- 3. Student Feedback on Conducive Learning Environment (Bar Chart) ---
+st.header("3. Student Feedback on Conducive Learning Environment")
+st.write("A bar chart illustrating student ratings for the statement: 'Department ensures a conducive learning environment.' (Ratings: 1=Low, 5=High).")
+try:
+    # Calculate value counts and convert to DataFrame for Plotly
+    rating_counts_df = arts_df['Conducive_Learning_Env_Rating'].value_counts().sort_index().reset_index()
+    rating_counts_df.columns = ['Rating', 'Count']
+
+    fig_bar = px.bar(
+        rating_counts_df, 
+        x='Rating', 
+        y='Count', 
+        text='Count',
+        title='Student Feedback: Conducive Learning Environment Rating',
+        color='Rating',
+        color_discrete_sequence=px.colors.sequential.Teal
+    )
+    fig_bar.update_layout(xaxis_title="Rating (1=Low, 5=High)", yaxis_title="Number of Students")
+    fig_bar.update_traces(textposition='outside')
+    st.plotly_chart(fig_bar, use_container_width=True)
+except Exception as e:
+    st.error(f"Error generating Feedback Bar Chart: {e}")
+
+st.markdown("---")
+
+# --- 4. Correlation Heatmap of Semester GPAs ---
+st.header("4. Correlation Heatmap of Semester GPAs")
+st.write("A heatmap showing the linear correlation between the GPAs of the first few academic semesters, indicating consistency or change in student performance over time.")
+try:
+    # Select relevant columns and calculate correlation
+    correlation_subset_df = arts_df[semester_gpa_cols].dropna()
+    correlation_matrix_subset = correlation_subset_df.corr()
+
+    fig_heat = px.imshow(
+        correlation_matrix_subset, 
+        text_auto=".2f", 
+        aspect="equal",
+        color_continuous_scale=px.colors.sequential.Viridis,
+        title='Correlation Heatmap of Semester GPAs'
+    )
+    fig_heat.update_xaxes(side="top")
+    st.plotly_chart(fig_heat, use_container_width=True)
+except Exception as e:
+    st.error(f"Error generating Heatmap: {e}")
+
+st.markdown("---")
+
+# --- 5. Average Semester GPA by Coaching Center Attendance (Violin Plot) ---
+st.header("5. Average GPA by Coaching Center Attendance")
+st.write("A violin plot comparing the full density distribution of average semester GPA between students who attended a coaching center and those who did not.")
+try:
+    fig_violin = px.violin(
+        arts_df, 
+        x='Attended_Coaching', 
+        y='Average_Semester_GPA', 
+        color='Attended_Coaching',
+        box=True, # Show quartiles inside the violin
+        points=False, # Do not show individual data points
+        title='Average Semester GPA by Coaching Center Attendance',
+        color_discrete_map={'Yes': 'lightgreen', 'No': 'red'}
+    )
+    fig_violin.update_layout(xaxis_title="Attended a Coaching Center?", yaxis_title="Average Semester GPA")
+    st.plotly_chart(fig_violin, use_container_width=True)
+except Exception as e:
+    st.error(f"Error generating Violin Plot: {e}")
