@@ -88,7 +88,7 @@ try:
         x='Average_Semester_GPA', 
         nbins=20, 
         title='Distribution of Average Semester GPA',
-        color_discrete_sequence = 'pink'
+        color_discrete_sequence =,'pink'
         
 # Use update_traces to add the black outer border
 fig_hist.update_traces(
