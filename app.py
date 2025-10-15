@@ -10,6 +10,9 @@ st.set_page_config(
 
 st.header("Genetic Algorithm", divider="gray")
 
+# Define the URL for the data
+URL = 'https://raw.githubusercontent.com/Kamsinah0606/EC2024/refs/heads/main/arts_faculty_data.csv'
+
 # Set Streamlit page configuration
 st.set_page_config(layout="wide", title="Arts Faculty Data Analysis")
 
