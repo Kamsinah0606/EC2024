@@ -4,6 +4,12 @@ import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
 
+st.set_page_config(
+    page_title="Genetic Algorithm"
+)
+
+st.header("Genetic Algorithm", divider="gray")
+
 # Set Streamlit page configuration
 st.set_page_config(layout="wide", title="Arts Faculty Data Analysis")
 
