@@ -89,12 +89,6 @@ try:
         nbins=20, 
         title='Distribution of Average Semester GPA',
         color_discrete_sequence =['pink']
-        
-# Use update_traces to add the black outer border
-fig_hist.update_traces(
-    marker_line_width= 1,       # Sets the line width
-    marker_line_color= 'black'  # Sets the line color
-    )
     )
         
     fig_hist.update_layout(xaxis_title="Average Semester GPA", yaxis_title="Number of Students")
