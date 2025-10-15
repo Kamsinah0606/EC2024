@@ -95,6 +95,7 @@ fig_hist.update_traces(
     marker_line_width= 1,       # Sets the line width
     marker_line_color= 'black'  # Sets the line color
     )
+    )
         
     fig_hist.update_layout(xaxis_title="Average Semester GPA", yaxis_title="Number of Students")
     st.plotly_chart(fig_hist, use_container_width=True)
